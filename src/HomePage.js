@@ -1,15 +1,30 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useOkto } from "okto-sdk-react";
+import { Menu, Divider, Typography, Table, Button, message, Modal } from 'antd';
+import { WalletOutlined, SwapOutlined, OrderedListOutlined, LineChartOutlined, UserOutlined, SettingOutlined, LogoutOutlined, CopyOutlined } from '@ant-design/icons';
+import './CryptoDashboard.scss';
 
-function HomePage() {
-  console.log("homepage rendered");
+import boyImage from './assets/boyImage.png';
+import transaction from './assets/transaction.png';
+import buyItem from './assets/buyItem.png';
+import logoImage from './assets/okto.png';
+import TransferTokensSection from "./views/TransferTokensSection";
+import ProfileCard from "./views/ProfileCard";
+import OrderStatus from "./views/OrderStatus";
+import Portfolio from "./views/Portfolio";
+
+const { Title, Text } = Typography;
+
+const CryptoDashboard = () => {
   const [userDetails, setUserDetails] = useState(null);
   const [portfolioData, setPortfolioData] = useState(null);
   const [wallets, setWallets] = useState(null);
   const [transferResponse, setTransferResponse] = useState(null);
   const [orderResponse, setOrderResponse] = useState(null);
-  const [error, setError] = useState(null);
-  const [activeSection, setActiveSection] = useState(null);
+  const [activeSection, setActiveSection] = useState('portfolio');
+  const [isErrorModalVisible, setIsErrorModalVisible] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
   const { getUserDetails, getPortfolio, createWallet, transferTokens, orderHistory } = useOkto();
   const [transferData, setTransferData] = useState({
     network_name: "",
@@ -20,44 +35,54 @@ function HomePage() {
   const [orderData, setOrderData] = useState({
     order_id: "",
   });
-
-  const fetchUserDetails = async () => {
+  console.log("Portifolio Data",portfolioData);
+  const fetchUserDetails = useCallback(async () => {
     try {
       const details = await getUserDetails();
       setUserDetails(details);
-      setActiveSection('userDetails');
+      setActiveSection('profile');
     } catch (error) {
-      setError(`Failed to fetch user details: ${error.message}`);
+      showErrorModal(`Failed to fetch user details: ${error.message}`);
     }
-  };
-  const fetchPortfolio = async () => {
+  }, [getUserDetails]);
+
+  const fetchPortfolio = useCallback(async () => {
     try {
       const portfolio = await getPortfolio();
       setPortfolioData(portfolio);
-      setActiveSection('portfolio');
     } catch (error) {
-      setError(`Failed to fetch portfolio: ${error.message}`);
+      showErrorModal(`Failed to fetch portfolio: ${error.message}`);
     }
-  };
-  const fetchWallets = async () => {
+  }, [getPortfolio]);
+
+  const fetchWallets = useCallback(async () => {
     try {
       const walletsData = await createWallet();
-      console.log(walletsData);
       setWallets(walletsData);
-      setActiveSection('wallets');
     } catch (error) {
-      setError(`Failed to fetch wallets: ${error.message}`);
+      showErrorModal(`Failed to fetch wallets: ${error.message}`);
     }
-  };
+  }, [createWallet]);
 
-  const handleTransferTokens = async (e) => {
-    e.preventDefault();
+  const handleTransferTokens = async () => {
     try {
       const response = await transferTokens(transferData);
       setTransferResponse(response);
       setActiveSection('transferResponse');
+      const orderId = response?.order_id || 'N/A';
+      Modal.success({
+        title: 'Success',
+        content: `Tokens transferred successfully! Order ID: ${orderId}`,
+      });
     } catch (error) {
-      setError(`Failed to transfer tokens: ${error.message}`);
+      let errorMessage = 'Failed to transfer tokens';
+      try {
+        const errorDetails = JSON.parse(error.response.data.error.details);
+        errorMessage = errorDetails.message;
+      } catch (parseError) {
+        console.error('Failed to parse error details:', parseError);
+      }
+      showErrorModal(errorMessage);
     }
   };
 
@@ -66,13 +91,12 @@ function HomePage() {
   };
 
   const handleOrderCheck = async (e) => {
-    e.preventDefault();
     try {
       const response = await orderHistory(orderData);
       setOrderResponse(response);
       setActiveSection('orderResponse');
     } catch (error) {
-      setError(`Failed to fetch order status: ${error.message}`);
+      showErrorModal(`Failed to fetch order status: ${error.message}`);
     }
   };
 
@@ -80,133 +104,190 @@ function HomePage() {
     setOrderData({ ...orderData, [e.target.name]: e.target.value });
   };
 
-  const containerStyle = {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    padding: '20px',
-    maxWidth: '800px',
-    margin: '0 auto',
+  const onMenuSelect = ({ key }) => {
+    setActiveSection(key);
+    switch (key) {
+      case 'portfolio':
+        fetchPortfolio();
+        break;
+      case 'wallets':
+        fetchWallets();
+        break;
+      case 'profile':
+        fetchUserDetails();
+        break;
+      default:
+        break;
+    }
   };
-  const buttonStyle = {
-    margin: '5px',
-    padding: '10px 20px',
-    fontSize: '16px',
-    cursor: 'pointer',
+
+  useEffect(() => {
+    fetchUserDetails();
+  }, [fetchUserDetails]);
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text).then(() => {
+      message.success('Address copied to clipboard!');
+    }).catch(() => {
+      message.error('Failed to copy address.');
+    });
   };
-  const formStyle = {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    width: '100%',
-    maxWidth: '400px',
+
+  const walletColumns = [
+    {
+      title: 'Network Name',
+      dataIndex: 'network_name',
+      key: 'network_name',
+    },
+    {
+      title: 'Address',
+      dataIndex: 'address',
+      key: 'address',
+      render: (text) => (
+        <>
+          <Text>{text}</Text>
+          <Button
+            icon={<CopyOutlined />}
+            size="small"
+            style={{ marginLeft: 8 }}
+            onClick={() => copyToClipboard(text)}
+          />
+        </>
+      ),
+    },
+  ];
+
+  const renderComponent = () => {
+    switch (activeSection) {
+      case 'portfolio':
+        return (
+          <Portfolio />
+        );
+      case 'wallets':
+        return (
+          <div>
+            <Table
+              columns={walletColumns}
+              dataSource={wallets?.wallets || []}
+              rowKey="address"
+              pagination={false}
+            />
+          </div>
+        );
+      case 'transferTokens':
+        return (
+          <TransferTokensSection
+            transferData={transferData}
+            handleInputChange={handleInputChange}
+            handleTransferTokens={handleTransferTokens}
+            transferResponse={transferResponse}
+          />
+        );
+
+      case 'orderStatus':
+        return (
+          <OrderStatus
+            orderData={orderData}
+            handleInputChangeOrders={handleInputChangeOrders}
+            handleOrderCheck={handleOrderCheck}
+            orderResponse={orderResponse}
+          />
+        );
+      case 'profile':
+        return <ProfileCard userDetails={userDetails} setActiveSection={setActiveSection} />;
+      case 'settings':
+        return (
+          <div>
+            <Title level={3}>Settings</Title>
+            <p>Settings content goes here...</p>
+          </div>
+        );
+      default:
+        return null;
+    }
   };
-  const inputStyle = {
-    margin: '5px',
-    padding: '10px',
-    width: '100%',
-    fontSize: '16px',
+
+  const showErrorModal = (message) => {
+    setErrorMessage(message);
+    setIsErrorModalVisible(true);
+  };
+
+  const handleErrorModalClose = () => {
+    setIsErrorModalVisible(false);
   };
 
   return (
-    <div style={containerStyle}>
-      <h1>Home Page</h1>
-      <div>
-        <button style={buttonStyle} onClick={fetchUserDetails}>View User Details</button>
-        <button style={buttonStyle} onClick={fetchPortfolio}>View Portfolio</button>
-        <button style={buttonStyle} onClick={fetchWallets}>View Wallets</button>
+    <div className="crypto-dashboard-container" style={{ width: '100%', height: '100%', display: 'flex' }}>
+      <div
+        className="left-fold"
+        style={{ width: '15%', height: '100vh', backgroundColor: '#ffffff', boxShadow: '0px 1px 50px 0px #00000014' }}
+      >
+        <div className="logo" style={{ padding: '0px 0px', display: 'flex', alignItems: 'center' }}>
+          <img src={logoImage} alt="Logo" style={{ width: '28%', height: 'auto', marginRight: '10px' }} />
+          <h2 style={{ margin: 0, fontSize: '24px', color: '#01202B' }}>oktoCrypto</h2>
+        </div>
+
+        <Menu
+          onClick={onMenuSelect}
+          style={{
+            width: `100%`,
+            color: '#5F747D',
+            fontSize: '16px',
+            fontWeight: '600'
+          }}
+          selectedKeys={[activeSection]}
+          mode="inline"
+        >
+          <Divider />
+          <Menu.Item key="portfolio" icon={<LineChartOutlined />}>
+            View Portfolio
+          </Menu.Item>
+          <Menu.Item key="wallets" icon={<WalletOutlined />}>
+            View Wallets
+          </Menu.Item>
+          <Menu.Item key="transferTokens" icon={<SwapOutlined />}>
+            Transfer Tokens
+          </Menu.Item>
+          <Menu.Item key="orderStatus" icon={<OrderedListOutlined />}>
+            Check Order Status
+          </Menu.Item>
+          <Divider />
+          <Menu.Item key="profile" icon={<UserOutlined />}>
+            My Profile
+          </Menu.Item>
+          <Menu.Item key="settings" icon={<SettingOutlined />}>
+            Settings
+          </Menu.Item>
+          <Menu.Item key="logout" icon={<LogoutOutlined />}>
+            Logout
+          </Menu.Item>
+        </Menu>
       </div>
-      {activeSection === 'userDetails' && userDetails && (
-        <div>
-          <h2>User Details:</h2>
-          <pre>{JSON.stringify(userDetails, null, 2)}</pre>
-        </div>
-      )}
-      {activeSection === 'portfolio' && portfolioData && (
-        <div>
-          <h2>Portfolio Data:</h2>
-          <pre>{JSON.stringify(portfolioData, null, 2)}</pre>
-        </div>
-      )}
-      {activeSection === 'wallets' && wallets && (
-        <div>
-          <h2>Wallets:</h2>
-          <pre>{JSON.stringify(wallets, null, 2)}</pre>
-        </div>
-      )}
-      <h2>Transfer Tokens</h2>
-      <form style={formStyle} onSubmit={handleTransferTokens}>
-        <input
-          style={inputStyle}
-          type="text"
-          name="network_name"
-          placeholder="Network Name"
-          value={transferData.network_name}
-          onChange={handleInputChange}
-          required
-        />
-        <input
-          style={inputStyle}
-          type="text"
-          name="token_address"
-          placeholder="Token Address"
-          value={transferData.token_address}
-          onChange={handleInputChange}
-          required
-        />
-        <input
-          style={inputStyle}
-          type="text"
-          name="quantity"
-          placeholder="Quantity"
-          value={transferData.quantity}
-          onChange={handleInputChange}
-          required
-        />
-        <input
-          style={inputStyle}
-          type="text"
-          name="recipient_address"
-          placeholder="Recipient Address"
-          value={transferData.recipient_address}
-          onChange={handleInputChange}
-          required
-        />
-        <button style={buttonStyle} type="submit">Transfer Tokens</button>
-      </form>
-      {activeSection === 'transferResponse' && transferResponse && (
-        <div>
-          <h2>Transfer Response:</h2>
-          <pre>{JSON.stringify(transferResponse, null, 2)}</pre>
-        </div>
-      )}
-      <h2>Check Order</h2>
-      <form style={formStyle} onSubmit={handleOrderCheck}>
-        <input
-          style={inputStyle}
-          type="text"
-          name="order_id"
-          placeholder="Order Id"
-          value={orderData.order_id}
-          onChange={handleInputChangeOrders}
-          required
-        />
-        <button style={buttonStyle} type="submit">Check Status</button>
-      </form>
-      {activeSection === 'orderResponse' && orderResponse && (
-        <div>
-          <h2>Order Status:</h2>
-          <pre>{JSON.stringify(orderResponse, null, 2)}</pre>
-        </div>
-      )}
-      {error && (
-        <div style={{ color: 'red' }}>
-          <h2>Error:</h2>
-          <p>{error}</p>
-        </div>
-      )}
+      <div
+        className="right-fold"
+        style={{ width: '70%', height: '100vh', overflow: 'auto', backgroundColor: "#161C2D", padding: '32px 48px' }}
+      >
+        {renderComponent()}
+      </div>
+      <div
+        className="image-section"
+        style={{ width: '15%', height: '100vh', backgroundColor: '#ffffff', boxShadow: '0px 1px 50px 0px #00000014', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '10px' }}
+      >
+        {/* This buyItem and transaction are future enhancements to be achieved */}
+        <img src={buyItem} alt="buyItemImage" style={{ width: '100%', height: 'auto' }} />
+        <img src={transaction} alt="transactionImage" style={{ width: '100%', height: 'auto' }} />
+        <img src={boyImage} alt="boyImage" style={{ width: '100%', height: 'auto' }} />
+      </div>
+      <Modal
+        title="Error"
+        visible={isErrorModalVisible}
+        onOk={handleErrorModalClose}
+        onCancel={handleErrorModalClose}
+      >
+        <p>{errorMessage}</p>
+      </Modal>
     </div>
   );
-}
+};
 
-export default HomePage;
+export default CryptoDashboard;

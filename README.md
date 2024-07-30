@@ -20,6 +20,19 @@ npm install react react-dom react-router-dom react-scripts
 
 npm install react-router-dom@latest
 
+npm install sass
+
+npm install @ant-design/icons
+
+npm install antd
+
+
+
+
+
+
+
+
 
 
 

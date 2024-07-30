@@ -1,0 +1,16 @@
+.transfer-tokens-form {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    padding: 20px;
+    background-color: #161C2D; 
+    border-radius: 8px;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+  
+  .transfer-tokens-form .ant-form {
+    width: 100%;
+  }
+  

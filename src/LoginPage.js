@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useOkto } from "okto-sdk-react";
 import { GoogleLogin } from "@react-oauth/google";
 import axios from "axios";
+import './LoginPage.css'; 
 
 function LoginPage() {
   console.log("LoginPage component rendered");
@@ -11,15 +12,6 @@ function LoginPage() {
   const [authToken, setAuthToken] = useState(null);
   const BASE_URL = "https://sandbox-api.okto.tech";
   const OKTO_CLIENT_API = process.env.REACT_APP_OKTO_CLIENT_API_KEY;
-
-  const containerStyle = {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    padding: '20px',
-    maxWidth: '800px',
-    margin: '0 auto',
-  };
 
   const apiService = axios.create({
     baseURL: BASE_URL,
@@ -38,32 +30,6 @@ function LoginPage() {
     });
   };
 
-  // const handleGoogleLogin = async (credentialResponse) => {
-  //   console.log("Google login response:", credentialResponse);
-  //   const idToken = credentialResponse.credential;
-  //   console.log("google idtoken: ", idToken);
-  //   authenticate(idToken, async (authResponse, error) => {
-  //     if (authResponse) {
-  //       console.log("Authentication check: ", authResponse);
-  //       setAuthToken(authResponse.auth_token);
-  //       if (!authToken && authResponse.action === "signup") {
-  //         console.log("User Signup");
-  //         const pinToken = authResponse.token;
-  //         await setPin(idToken, pinToken, "0000");
-  //         await authenticate(idToken, async (res, err) => {
-  //           if (res) {
-  //             setAuthToken(res.auth_token);
-  //           }
-  //         });
-  //       }
-  //       console.log("auth token received", authToken);
-  //       navigate("/home");
-  //     }
-  //     if (error) {
-  //       console.error("Authentication error:", error);
-  //     }
-  //   });
-  // };
   const handleGoogleLogin = async (credentialResponse) => {
     console.log("Google login response:", credentialResponse);
     const idToken = credentialResponse.credential;
@@ -72,9 +38,7 @@ function LoginPage() {
       if (authResponse) {
         console.log("Authentication check: ", authResponse);
         setAuthToken(authResponse.auth_token);
-        console.log("auth token received", authResponse.auth_token);
-  
-        // Check if the user is signing up and set the pin
+
         if (!authResponse.auth_token && authResponse.action === "signup") {
           console.log("User Signup");
           const pinToken = authResponse.token;
@@ -90,7 +54,6 @@ function LoginPage() {
             }
           });
         } else {
-          // If no signup, directly navigate
           navigate("/home");
         }
       }
@@ -99,7 +62,6 @@ function LoginPage() {
       }
     });
   };
-  
 
   const handleError = (error) => {
     console.error("Login Failed", error);
@@ -107,20 +69,45 @@ function LoginPage() {
   };
 
   return (
-    <div style={containerStyle}>
-      <h1>Login</h1>
-      {!authToken ? (
-        <GoogleLogin
-          onSuccess={handleGoogleLogin}
-          onError={handleError}
-          useOneTap
-          promptMomentNotification={(notification) =>
-            console.log("Prompt moment notification:", notification)
-          }
-        />
-      ) : (
-        <> Authenticated </>
-      )}
+    <div className="login-container">
+      <div className="left-section">
+        <div className="image-container"></div>
+        <h1>Invest with Confidence</h1>
+        <p>
+          Welcome to Okto Crypto Investment Tracker. Manage your crypto investments seamlessly and securely with our user-friendly platform. Join us today and take control of your financial future.
+        </p>
+      </div>
+      <div className="right-section">
+        <h2>Sign in</h2>
+        {!authToken ? (
+          <>
+            <GoogleLogin
+              onSuccess={handleGoogleLogin}
+              onError={handleError}
+              useOneTap
+              promptMomentNotification={(notification) =>
+                console.log("Prompt moment notification:", notification)
+              }
+            />
+            <p className="or-separator">OR</p>
+            <form>
+              <input type="text" placeholder="User name or email address" />
+              <input type="password" placeholder="Your password" />
+              <button type="submit">Sign in</button>
+              <a href="/">Forget your password</a>
+            </form>
+          </>
+        ) : (
+          <>
+            <p>Authenticated</p>
+            <button onClick={() => navigate("/home")}>Go to Dashboard</button>
+
+          </>
+        )}
+        <p>
+          Don't have an account? <a href="/">Sign up</a>
+        </p>
+      </div>
     </div>
   );
 }
