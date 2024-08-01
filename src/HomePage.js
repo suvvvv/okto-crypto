@@ -66,13 +66,33 @@ const CryptoDashboard = () => {
 
   const handleTransferTokens = async () => {
     try {
+
+      setTransferResponse(null);
+
       const response = await transferTokens(transferData);
+      console.log('Transfer response:', response); 
+
       setTransferResponse(response);
       setActiveSection('transferResponse');
-      const orderId = response?.order_id || 'N/A';
+
+      const orderId = response?.orderId || 'N/A';
+
       Modal.success({
         title: 'Success',
-        content: `Tokens transferred successfully! Order ID: ${orderId}`,
+        content: (
+          <div>
+            <p>Tokens transferred successfully! Order ID: {orderId}</p>
+            <Button
+              icon={<CopyOutlined />}
+              onClick={() => {
+                navigator.clipboard.writeText(orderId);
+                message.success('Order ID copied to clipboard!');
+              }}
+            >
+              Copy Order ID
+            </Button>
+          </div>
+        ),
       });
     } catch (error) {
       let errorMessage = 'Failed to transfer tokens';
@@ -86,19 +106,29 @@ const CryptoDashboard = () => {
     }
   };
 
+
+
   const handleInputChange = (e) => {
     setTransferData({ ...transferData, [e.target.name]: e.target.value });
   };
 
-  const handleOrderCheck = async (e) => {
-    try {
-      const response = await orderHistory(orderData);
-      setOrderResponse(response);
-      setActiveSection('orderResponse');
-    } catch (error) {
-      showErrorModal(`Failed to fetch order status: ${error.message}`);
-    }
-  };
+const handleOrderCheck = async (e) => {
+  try {
+    const response = await orderHistory(orderData);
+    setOrderResponse(response); 
+  } catch (error) {
+    let errorMessage = 'Failed to fetch order status';
+      try {
+        const errorDetails = JSON.parse(error.response.data.error.details);
+        errorMessage = errorDetails.message;
+      } catch (parseError) {
+        console.error('Failed to parse error details:', parseError);
+      }
+      showErrorModal(errorMessage);
+    console.error('Failed to fetch order status:', error);
+  }
+};
+
 
   const handleInputChangeOrders = (e) => {
     setOrderData({ ...orderData, [e.target.name]: e.target.value });

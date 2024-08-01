@@ -72,10 +72,12 @@ function LoginPage() {
     <div className="login-container">
       <div className="left-section">
         <div className="image-container"></div>
-        <h1>Invest with Confidence</h1>
-        <p>
-          Welcome to Okto Crypto Investment Tracker. Manage your crypto investments seamlessly and securely with our user-friendly platform. Join us today and take control of your financial future.
-        </p>
+        <h1>All-in-One Crypto Investment Platform</h1>
+<p>
+  This project uses the Okto SDK with React for building a Crypto Investment Tracker. This app integrates the Okto Embedded Wallet SDK to provide users with seamless wallet management, portfolio tracking, and transaction capabilities. Users can view their cryptocurrency holdings, perform token transfers, and monitor their transaction history, all within a single platform.
+</p>
+
+
       </div>
       <div className="right-section">
         <h2>Sign in</h2>

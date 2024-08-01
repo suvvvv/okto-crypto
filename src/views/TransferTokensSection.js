@@ -23,12 +23,12 @@ const TransferTokensSection = ({ transferData, handleInputChange, handleTransfer
             handleInputChange={handleInputChange}
             handleTransferTokens={handleTransferTokens}
           />
-          {transferResponse && (
+          {/* {transferResponse && (
             <div style={{ marginTop: '20px', color: 'black' }}>
               <Title level={4} style={{ color: 'black' }}>Transfer Response:</Title>
               <pre style={{ color: 'black' }}>{JSON.stringify(transferResponse, null, 2)}</pre>
             </div>
-          )}
+          )} */}
         </div>
       </div>
     </div>

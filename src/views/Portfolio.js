@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useOkto } from 'okto-sdk-react';
-import { Empty, Card} from 'antd';
-import { DollarOutlined, WalletOutlined } from '@ant-design/icons';
+import { Empty, Card } from 'antd';
+import { WalletOutlined, MoneyCollectOutlined } from '@ant-design/icons';
 import './Portfolio.scss';
 import bitcoinImage from '../assets/btc.png'; 
-
 
 const Portfolio = () => {
     const { getPortfolio } = useOkto();
@@ -39,7 +38,7 @@ const Portfolio = () => {
                                     <span className="quantity">{item.quantity}</span>
                                 </div>
                                 <span className="amount">
-                                    <DollarOutlined className="amount-icon" />
+                                    <MoneyCollectOutlined className="amount-icon" />
                                     {item.amount_in_inr}
                                 </span>
                             </div>

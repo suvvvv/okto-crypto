@@ -24,7 +24,7 @@
     }
 
     .portfolio-card {
-        width: 300px;
+        width: 400px;
         border-radius: 8px;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         transition: transform 0.3s, box-shadow 0.3s;
@@ -38,7 +38,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-
+            gap: 10px; 
+            padding: 10px; /* Added padding for better spacing */
             .token-info {
                 display: flex;
                 align-items: center;
